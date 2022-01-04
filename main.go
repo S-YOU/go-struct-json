@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	out = flag.String("o", "", "output file")
+	out  = flag.String("o", "", "output file")
+	kind = flag.String("kind", "go", "override kind")
 )
 
 type Field struct {
@@ -51,6 +52,7 @@ type Struct struct {
 	Docs        []string `json:"docs,omitempty"`
 	Comments    []string `json:"comments,omitempty"`
 	Fields      []Field  `json:"fields"`
+	Embeds      []Field  `json:"-"`
 	Key         string   `json:"key"`
 }
 
@@ -63,8 +65,9 @@ func main() {
 }
 
 type FileContent struct {
-	FileKind string    `json:"kind"`
-	Data     []*Struct `json:"data"`
+	Kind    string    `json:"kind"`
+	SrcKind string    `json:"srcKind"`
+	Data    []*Struct `json:"data"`
 }
 
 func process() error {
@@ -77,8 +80,9 @@ func process() error {
 		return structs[i].Key < structs[j].Key
 	})
 	fileContent := FileContent{
-		FileKind: "go",
-		Data:     structs,
+		Kind:    *kind,
+		SrcKind: "go",
+		Data:    structs,
 	}
 	parsedJson, err := json.MarshalIndent(fileContent, "", "\t")
 	if err != nil {
@@ -190,20 +194,32 @@ func parseFile(p string) []*Struct {
 								}
 							}
 							fieldType := getType(field.Type)
-							for _, name := range field.Names {
-								nameJson := jsonName(name.Name)
+							if len(field.Names) == 0 {
 								st.Fields = append(st.Fields, Field{
-									GoName:     name.Name,
-									GoVarName:  lowerCamel(name.Name),
-									NameJson:   nameJson,
 									GoType:     fieldType,
 									Tag:        tag,
 									TagFaker:   tagFaker,
 									TagFixture: tagFixture,
 									Docs:       docs,
 									Comments:   comments,
-									Key:        nameJson,
+									Key:        fieldType,
 								})
+							} else {
+								for _, name := range field.Names {
+									nameJson := jsonName(name.Name)
+									st.Fields = append(st.Fields, Field{
+										GoName:     name.Name,
+										GoVarName:  lowerCamel(name.Name),
+										NameJson:   nameJson,
+										GoType:     fieldType,
+										Tag:        tag,
+										TagFaker:   tagFaker,
+										TagFixture: tagFixture,
+										Docs:       docs,
+										Comments:   comments,
+										Key:        nameJson,
+									})
+								}
 							}
 						}
 						structs = append(structs, st)
