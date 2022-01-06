@@ -37,6 +37,7 @@ type Field struct {
 	Tag        string   `json:"tag,omitempty"`
 	TagFaker   string   `json:"tagFaker,omitempty"`
 	TagFixture string   `json:"tagFixture,omitempty"`
+	TagGql     string   `json:"tagGql,omitempty"`
 	Docs       []string `json:"docs,omitempty"`
 	Comments   []string `json:"comments,omitempty"`
 	Key        string   `json:"key"`
@@ -168,7 +169,7 @@ func parseFile(p string) []*Struct {
 						}
 						structType := typeSpec.Type.(*ast.StructType)
 						for _, field := range structType.Fields.List {
-							tag, tagFaker, tagFixture := "", "", ""
+							tag, tagFaker, tagFixture, tagGql := "", "", "", ""
 							if field.Tag != nil {
 								tag, err = strconv.Unquote(field.Tag.Value)
 								if err != nil {
@@ -180,6 +181,7 @@ func parseFile(p string) []*Struct {
 								if strings.HasPrefix(tagFixture, "string:") {
 									tagFixture = strconv.Quote(tagFixture[7:])
 								}
+								tagGql = v.Get("gql")
 							}
 							comments := []string(nil)
 							if field.Comment != nil {
@@ -200,6 +202,7 @@ func parseFile(p string) []*Struct {
 									Tag:        tag,
 									TagFaker:   tagFaker,
 									TagFixture: tagFixture,
+									TagGql:     tagGql,
 									Docs:       docs,
 									Comments:   comments,
 									Key:        fieldType,
@@ -215,6 +218,7 @@ func parseFile(p string) []*Struct {
 										Tag:        tag,
 										TagFaker:   tagFaker,
 										TagFixture: tagFixture,
+										TagGql:     tagGql,
 										Docs:       docs,
 										Comments:   comments,
 										Key:        nameJson,
