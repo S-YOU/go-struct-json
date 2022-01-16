@@ -36,7 +36,7 @@ type Field struct {
 	GoType     string   `json:"Type"`
 	GoBaseType string   `json:"baseType"`
 	IsArray    bool     `json:"isArray"`
-	IsNull     bool     `json:"isNull"`
+	NotNull    bool     `json:"notNull"`
 	Tag        string   `json:"tag,omitempty"`
 	TagFaker   string   `json:"tagFaker,omitempty"`
 	TagFixture string   `json:"tagFixture,omitempty"`
@@ -199,7 +199,7 @@ func parseFile(p string) []*Struct {
 								}
 							}
 							fieldType := getType(field.Type)
-							isArray, isNull := getIsArrayAndIsNull(field.Type)
+							isArray, notNull := getIsArrayAndNotNull(field.Type)
 							baseType := fieldType
 							if isArray {
 								fieldType = "[]" + fieldType
@@ -209,7 +209,7 @@ func parseFile(p string) []*Struct {
 									GoType:     fieldType,
 									GoBaseType: baseType,
 									IsArray:    isArray,
-									IsNull:     isNull,
+									NotNull:    notNull,
 									Tag:        tag,
 									TagFaker:   tagFaker,
 									TagFixture: tagFixture,
@@ -228,7 +228,7 @@ func parseFile(p string) []*Struct {
 										GoType:     fieldType,
 										GoBaseType: baseType,
 										IsArray:    isArray,
-										IsNull:     isNull,
+										NotNull:    notNull,
 										Tag:        tag,
 										TagFaker:   tagFaker,
 										TagFixture: tagFixture,
@@ -279,24 +279,25 @@ func getType(field ast.Expr) string {
 	case *ast.ArrayType:
 		return fmt.Sprintf("%s", getType(typ.Elt))
 	default:
-		pp.Println("unknown getType", typ)
+		_, _ = pp.Println("unknown getType", typ)
 		return "---"
 	}
 }
 
-func getIsArrayAndIsNull(field ast.Expr) (isArray bool, isNull bool) {
+func getIsArrayAndNotNull(field ast.Expr) (isArray bool, notNull bool) {
 	switch typ := field.(type) {
 	case *ast.Ident:
-		return false, false
+		return false, true
 	case *ast.SelectorExpr:
-		_, b := getIsArrayAndIsNull(typ.Sel)
+		_, b := getIsArrayAndNotNull(typ.Sel)
 		return false, b
 	case *ast.StarExpr:
-		return false, true
+		a, _ := getIsArrayAndNotNull(typ.X)
+		return a, false
 	case *ast.ArrayType:
-		_, b := getIsArrayAndIsNull(typ.Elt)
+		_, b := getIsArrayAndNotNull(typ.Elt)
 		return true, b
 	default:
-		return false, false
+		return false, true
 	}
 }
