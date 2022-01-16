@@ -34,6 +34,9 @@ type Field struct {
 	GoVarName  string   `json:"name"`
 	NameJson   string   `json:"nameJson"`
 	GoType     string   `json:"Type"`
+	GoBaseType string   `json:"baseType"`
+	IsArray    bool     `json:"isArray"`
+	IsNull     bool     `json:"isNull"`
 	Tag        string   `json:"tag,omitempty"`
 	TagFaker   string   `json:"tagFaker,omitempty"`
 	TagFixture string   `json:"tagFixture,omitempty"`
@@ -196,9 +199,17 @@ func parseFile(p string) []*Struct {
 								}
 							}
 							fieldType := getType(field.Type)
+							isArray, isNull := getIsArrayAndIsNull(field.Type)
+							baseType := fieldType
+							if isArray {
+								fieldType = "[]" + fieldType
+							}
 							if len(field.Names) == 0 {
 								st.Fields = append(st.Fields, Field{
 									GoType:     fieldType,
+									GoBaseType: baseType,
+									IsArray:    isArray,
+									IsNull:     isNull,
 									Tag:        tag,
 									TagFaker:   tagFaker,
 									TagFixture: tagFixture,
@@ -215,6 +226,9 @@ func parseFile(p string) []*Struct {
 										GoVarName:  lowerCamel(name.Name),
 										NameJson:   nameJson,
 										GoType:     fieldType,
+										GoBaseType: baseType,
+										IsArray:    isArray,
+										IsNull:     isNull,
 										Tag:        tag,
 										TagFaker:   tagFaker,
 										TagFixture: tagFixture,
@@ -262,8 +276,27 @@ func getType(field ast.Expr) string {
 		return fmt.Sprintf("%s.%s", typ.X, getType(typ.Sel))
 	case *ast.StarExpr:
 		return fmt.Sprintf("*%s", getType(typ.X))
+	case *ast.ArrayType:
+		return fmt.Sprintf("%s", getType(typ.Elt))
 	default:
 		pp.Println("unknown getType", typ)
 		return "---"
+	}
+}
+
+func getIsArrayAndIsNull(field ast.Expr) (isArray bool, isNull bool) {
+	switch typ := field.(type) {
+	case *ast.Ident:
+		return false, false
+	case *ast.SelectorExpr:
+		_, b := getIsArrayAndIsNull(typ.Sel)
+		return false, b
+	case *ast.StarExpr:
+		return false, true
+	case *ast.ArrayType:
+		_, b := getIsArrayAndIsNull(typ.Elt)
+		return true, b
+	default:
+		return false, false
 	}
 }
