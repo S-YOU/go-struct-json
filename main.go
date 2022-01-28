@@ -33,12 +33,15 @@ type Field struct {
 	GoName     string   `json:"Name"`
 	GoVarName  string   `json:"name"`
 	NameJson   string   `json:"nameJson"`
+	NameDb     string   `json:"nameDb"`
+	NamesDb    string   `json:"namesDb"`
 	GoType     string   `json:"Type"`
 	GoBaseType string   `json:"baseType"`
 	IsArray    bool     `json:"isArray"`
 	NotNull    bool     `json:"notNull"`
 	Tag        string   `json:"tag,omitempty"`
 	TagFaker   string   `json:"tagFaker,omitempty"`
+	TagSpanner string   `json:"tagSpanner,omitempty"`
 	TagFixture string   `json:"tagFixture,omitempty"`
 	TagGql     string   `json:"tagGql,omitempty"`
 	Docs       []string `json:"docs,omitempty"`
@@ -49,6 +52,8 @@ type Field struct {
 type Struct struct {
 	GoName      string   `json:"Name"`
 	GoVarName   string   `json:"name"`
+	NameDb      string   `json:"nameDb"`
+	NamesDb     string   `json:"namesDb"`
 	NameJson    string   `json:"nameJson"`
 	GoShortName string   `json:"n"`
 	GoNames     string   `json:"Names"`
@@ -149,11 +154,14 @@ func parseFile(p string) []*Struct {
 						singularName := inflection.Singular(typeName)
 						pluralName := plural(singularName)
 						goName := snaker.ForceCamelIdentifier(singularName)
+						nameDb := snaker.CamelToSnake(inflection.Singular(goName))
 						st := &Struct{
 							GoName:      goName,
 							GoVarName:   typeName,
 							GoNames:     snaker.ForceCamelIdentifier(pluralName),
 							GoVarNames:  strcase.ToLowerCamel(pluralName),
+							NameDb:      nameDb,
+							NamesDb:     plural(nameDb),
 							NameJson:    jsonName(typeName),
 							GoShortName: shortName(goName),
 							Key:         goName,
@@ -172,7 +180,7 @@ func parseFile(p string) []*Struct {
 						}
 						structType := typeSpec.Type.(*ast.StructType)
 						for _, field := range structType.Fields.List {
-							tag, tagFaker, tagFixture, tagGql := "", "", "", ""
+							tag, tagFaker, tagFixture, tagSpanner, tagGql := "", "", "", "", ""
 							if field.Tag != nil {
 								tag, err = strconv.Unquote(field.Tag.Value)
 								if err != nil {
@@ -184,6 +192,7 @@ func parseFile(p string) []*Struct {
 								if strings.HasPrefix(tagFixture, "string:") {
 									tagFixture = strconv.Quote(tagFixture[7:])
 								}
+								tagSpanner = v.Get("spanner")
 								tagGql = v.Get("gql")
 							}
 							comments := []string(nil)
@@ -212,6 +221,7 @@ func parseFile(p string) []*Struct {
 									NotNull:    notNull,
 									Tag:        tag,
 									TagFaker:   tagFaker,
+									TagSpanner: tagSpanner,
 									TagFixture: tagFixture,
 									TagGql:     tagGql,
 									Docs:       docs,
@@ -221,9 +231,12 @@ func parseFile(p string) []*Struct {
 							} else {
 								for _, name := range field.Names {
 									nameJson := jsonName(name.Name)
+									nameDb := snaker.CamelToSnake(inflection.Singular(name.Name))
 									st.Fields = append(st.Fields, Field{
 										GoName:     name.Name,
 										GoVarName:  lowerCamel(name.Name),
+										NameDb:     nameDb,
+										NamesDb:    plural(nameDb),
 										NameJson:   nameJson,
 										GoType:     fieldType,
 										GoBaseType: baseType,
@@ -231,6 +244,7 @@ func parseFile(p string) []*Struct {
 										NotNull:    notNull,
 										Tag:        tag,
 										TagFaker:   tagFaker,
+										TagSpanner: tagSpanner,
 										TagFixture: tagFixture,
 										TagGql:     tagGql,
 										Docs:       docs,
