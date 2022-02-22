@@ -45,32 +45,28 @@ type Struct struct {
 	TypeKind    string   `json:"typeKind"`
 	Key         string   `json:"key"`
 }
-
 type Field struct {
-	GoName     string   `json:"Name"`
-	GoVarName  string   `json:"name,omitempty"`
-	NameJson   string   `json:"nameJson,omitempty"`
-	NameDb     string   `json:"nameDb,omitempty"`
-	NamesDb    string   `json:"namesDb,omitempty"`
-	GoType     string   `json:"Type"`
-	GoBaseType string   `json:"baseType,omitempty"`
-	IsArray    bool     `json:"isArray"`
-	NotNull    bool     `json:"notNull"`
-	Key        string   `json:"key"`
-	Docs       []string `json:"docs,omitempty"`
-	Comments   []string `json:"comments,omitempty"`
-	// struct field
+	GoName     string            `json:"Name"`
+	GoVarName  string            `json:"name,omitempty"`
+	NameJson   string            `json:"nameJson,omitempty"`
+	NameDb     string            `json:"nameDb,omitempty"`
+	NamesDb    string            `json:"namesDb,omitempty"`
+	GoType     string            `json:"Type"`
+	GoBaseType string            `json:"baseType,omitempty"`
+	IsArray    bool              `json:"isArray"`
+	NotNull    bool              `json:"notNull"`
+	Key        string            `json:"key"`
+	Docs       []string          `json:"docs,omitempty"`
+	Comments   []string          `json:"comments,omitempty"`
 	Tag        map[string]string `json:"tag,omitempty"`
 	TagFaker   string            `json:"tagFaker,omitempty"`
 	TagSpanner string            `json:"tagSpanner,omitempty"`
 	TagFixture string            `json:"tagFixture,omitempty"`
 	TagGql     string            `json:"tagGql,omitempty"`
 	TypeKind   string            `json:"typeKind"`
-	// intf func
-	Arguments []*Argument `json:"args,omitempty"`
-	Results   []*Argument `json:"results,omitempty"`
+	Arguments  []*Argument       `json:"args,omitempty"`
+	Results    []*Argument       `json:"results,omitempty"`
 }
-
 type Argument struct {
 	GoType     string `json:"Type"`
 	GoBaseType string `json:"baseType"`
@@ -80,7 +76,6 @@ type Argument struct {
 
 func main() {
 	flag.Parse()
-
 	if err := process(); err != nil {
 		log.Fatalln(err)
 	}
@@ -110,7 +105,6 @@ func process() error {
 	if err != nil {
 		return err
 	}
-
 	if *out == "-" {
 		if _, err := os.Stdout.Write(parsedJson); err != nil {
 			return err
@@ -128,10 +122,8 @@ func process() error {
 			return err
 		}
 	}
-
 	return nil
 }
-
 func plural(s string) string {
 	out := inflection.Plural(s)
 	if out == "information" {
@@ -141,19 +133,15 @@ func plural(s string) string {
 	}
 	return out
 }
-
 func parseFile(p string) []*Struct {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, p, nil, parser.ParseComments)
 	if err != nil {
 		panic(err)
 	}
-
 	structs := make([]*Struct, 0)
-
 	for _, node := range f.Decls {
 		switch node.(type) {
-
 		case *ast.GenDecl:
 			genDecl := node.(*ast.GenDecl)
 			for _, spec := range genDecl.Specs {
@@ -299,7 +287,6 @@ func parseFile(p string) []*Struct {
 										Results:    results,
 									}
 									st.Fields = append(st.Fields, f)
-
 								}
 							}
 						}
@@ -421,7 +408,6 @@ func parseFile(p string) []*Struct {
 			}
 		}
 	}
-
 	return structs
 }
 
@@ -430,11 +416,9 @@ var shortNameRe = regexp.MustCompile("[A-Z]")
 func shortName(s string) string {
 	return strings.ToLower(strings.Join(shortNameRe.FindAllString(s, -1), ""))
 }
-
 func jsonName(s string) string {
 	return strings.ReplaceAll(strcase.ToLowerCamel(s), "ID", "Id")
 }
-
 func lowerCamel(s string) string {
 	if s == "" {
 		return ""
@@ -442,7 +426,6 @@ func lowerCamel(s string) string {
 	r, n := utf8.DecodeRuneInString(s)
 	return string(unicode.ToLower(r)) + s[n:]
 }
-
 func getType(field ast.Expr) string {
 	switch typ := field.(type) {
 	case *ast.Ident:
@@ -459,7 +442,6 @@ func getType(field ast.Expr) string {
 		return ""
 	}
 }
-
 func getIsArrayAndNotNull(field ast.Expr) (isArray bool, notNull bool) {
 	switch typ := field.(type) {
 	case *ast.Ident:
