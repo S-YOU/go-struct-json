@@ -20,7 +20,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/jinzhu/inflection"
-	"github.com/knq/snaker"
+	"github.com/kenshaw/snaker"
 )
 
 var (
